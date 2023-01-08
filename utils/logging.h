@@ -1,8 +1,17 @@
 #ifndef __UTILS_LOGGING_H__
 #define __UTILS_LOGGING_H__
 
+#define PIPENAME 256
+#define BOXNAME 32
+
+
 #include <stdio.h>
 #include <stdlib.h>
+
+static const char PIPENAME_TOO_BIG[] = "The pipe's name has too many characters";
+static const char BOXNAME_TOO_BIG[] = "The box's name has too many characters";
+static const char INVALID_NUMBER_OF_ARGUMENTS[] = "Insufficient or too many arguments";
+static const char INVALID_ARGUMENTS[] = "One of the arguments is invalid";
 
 typedef enum {
     LOG_QUIET = 0,

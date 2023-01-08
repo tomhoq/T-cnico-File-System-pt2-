@@ -11,10 +11,10 @@
             PANIC(MSG);                                                        \
     }
 
-#define PANIC(MSG)                                                             \
+/*#define PANIC(MSG)                                                             \
     {                                                                          \
         fprintf(stderr, "Aborting. Reason: %s\n", (MSG));                      \
         abort();                                                               \
     }
-
+*/
 #endif
