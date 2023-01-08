@@ -30,6 +30,13 @@ int main(int argc, char **argv) {
     }
 
     strcpy(box_name, argv[3]);
+
+    //enviar pedido de registo ao mbroker
+    char *ser = serialize(REGISTER_SUBSCRIBER, personal_pipe, box_name);
+    printf("%s\n",ser);
+    //send_msg(reg_pipe, serialize(REGISTER_SUBSCRIBER, personal_pipe, box_name));
+
+    free(ser);
     
     printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     return 0;

@@ -25,7 +25,21 @@ int main(int argc, char **argv) {
     strcpy(personal_pipe, argv[2]);
     strcpy(command, argv[3]);
 
+    //verificar que register pipe existe!!
+    int reg_pipe = open(register_pipe, O_WRONLY);
+    if (reg_pipe == -1) {
+        fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
+        return -1;
+    }
+
+    int prs_pipe = open(personal_pipe, O_WRONLY);
+    if (prs_pipe != -1) {
+        fprintf(stdout, "ERROR: %s\n", EXISTENT_PIPE);
+        return -1;
+    }
+
     if (!strcmp(command, "create")) {
+
         //create box
     }
     else if(!strcmp(command, "remove")){
@@ -36,8 +50,6 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", INVALID_ARGUMENTS);
     }
  
-
-
     printf("%s %s", register_pipe, personal_pipe);
 
     return 0;
