@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
 
 //COMMUNICATION WITH MBROKER-------------------------------------------------
-    request *str =serialize(REGISTER_SUBSCRIBER, personal_pipe, box_name);
+    char *str =serialize(REGISTER_SUBSCRIBER, personal_pipe, box_name);
     send_request(reg_pipe, str);
     free(str);
     

@@ -10,19 +10,18 @@ void clear_session(int fd, char* fn){
 }
 
 /*writes to pipe tx a pointer with information*/
-void send_request(int tx, request *r1) {
-    ssize_t ret = write(tx, &r1, sizeof(r1)); 
+void send_request(int tx, char *r1) {
+    ssize_t ret = write(tx, r1, sizeof(char)*400); 
     if (ret < 0) {
         fprintf(stdout, "ERROR: %s\n", ERROR_WRITING_PIPE);
         exit(EXIT_FAILURE);
     }
 }
 
-/*Returns a pointer to a struct containing the request*/
-request *serialize(int code, char* client_pipe, char* box_name){
-    request *r1 = (request*) malloc(sizeof(request));
-    r1->_code  = code;
-    strcpy(r1->_client_pipe, client_pipe); 
-    strcpy(r1->_box_name, box_name); 
+/*Returns a pointer to a struct containing the char*/
+char *serialize(int code, char* client_pipe, char* box_name){
+    char *r1 = (char*) malloc(sizeof(char)*400);
+    sprintf(r1, "%d|%s|%s", code, client_pipe, box_name);
+    r1 = realloc(r1, strlen(r1)+1);
     return r1;
 }

@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 
     if (max_sessions<1){
         fprintf(stdout, "ERROR: %s\n", INVALID_SESSIONS);
+        return -1;
     }
 
     //fprintf(stderr, "usage: mbroker <pipename>\n");
@@ -51,24 +52,31 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    char client_pipe[PIPENAME];
-    char box_name[BOXNAME];
-    request* buffer = (request*) malloc(sizeof(request));
+    
+    char* buffer = (char*) malloc(sizeof(char)*400);
+    int code;
+    char *client_pipe;
+    char *box_name;
 
-    ssize_t broker_read= read(reg_pipe, buffer, sizeof(request));
+    ssize_t broker_read= read(reg_pipe, buffer, sizeof(char)*400);
     
     do {
-        printf("received %zdb at %p\n", broker_read, buffer);
         if(broker_read >0){
-            strcpy(client_pipe, buffer->_client_pipe);
-            strcpy(box_name, buffer->_box_name);
-            switch(buffer->_code) {
+            printf("%s\n",buffer);
+            code = atoi(strtok(buffer,"|"));
+            client_pipe = strtok(NULL,"|");
+            box_name = strtok(NULL,"|");
+            switch(code) {
                 case 1:
                     printf("reg_pub(buffer\n");
                     //reg_publisher(box_name);
+                    //atribui thread ao publisher
+                    //a thread deve ir lendo do client pipe e imprimindo para o tfs
                     break;
                 case 2:
                     printf("reg_sub(buffer\n");
+                    //atribui thread ao subscriber
+                    //a thread deve ir lendo do tfs e imprimindo para o pipe do client
                     break;
                 case 3:
                     printf("box_create(buffer)\n");
@@ -96,12 +104,14 @@ int main(int argc, char **argv) {
                     printf("mensagens enviadas pelo subscriber\n");
                     break;
                 default:
-                    printf("%d, %s, %s\n", buffer->_code, buffer->_client_pipe, buffer->_box_name);
+                    printf("%d, %s, %s\n", code, client_pipe, box_name);
                     break;
-            }
+            };
+            buffer = realloc(buffer, sizeof(char)*400); //segmentation fault if more than 2 clients!! bcs of strtok
         }
+        
+        
     } while((broker_read = read(reg_pipe, buffer, MSIZE)) >= 0);
-    printf("%zd\n", broker_read);
     
     //mbroker
     clear_session(reg_pipe, register_pipe);

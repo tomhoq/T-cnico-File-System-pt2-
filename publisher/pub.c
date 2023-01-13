@@ -66,8 +66,9 @@ int main(int argc, char **argv) {
     }
 
 //COMMUNICATION WITH MBROKER-------------------------------------------------
-
-    send_request(reg_pipe, serialize(REGISTER_PUBLISHER, personal_pipe, box_name));
+    char *str  = serialize(REGISTER_PUBLISHER, personal_pipe, box_name);
+    send_request(reg_pipe, str);
+    free(str);
 
     int fd = open(personal_pipe, O_WRONLY);   //tries to open pipe after mbroker received the request
     if (fd == -1) {                           //program will freeze here while thread is not implemented

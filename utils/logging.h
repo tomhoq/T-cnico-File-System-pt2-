@@ -51,10 +51,10 @@ typedef enum {
 
 void clear_session(int fd, char* fn);
 /*writes to pipe tx a pointer with information*/
-void send_request(int tx, request *r1);
+void send_request(int tx, char *r1);
 
 /*Returns a pointer to a struct containing the request*/
-request *serialize(int code, char* client_pipe, char* box_name);
+char *serialize(int code, char* client_pipe, char* box_name);
 
 void sig_handler(int sig);
 

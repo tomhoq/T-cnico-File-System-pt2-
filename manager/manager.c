@@ -61,15 +61,17 @@ int main(int argc, char **argv) {
     }
 
 //COMMAND-------------------------------------------------------------------
-
+    char *str;
     if (!strcmp(command, "create")) { 
-        send_request(reg_pipe, serialize(CREATE_BOX, personal_pipe, box_name));
+        str = serialize(CREATE_BOX, personal_pipe, box_name);
     }
     else if(!strcmp(command, "remove")){ 
-        send_request(reg_pipe, serialize(REMOVE_BOX, personal_pipe, box_name));
-    } else if (!strcmp(command, "list")){
-        send_request(reg_pipe, serialize(LIST_BOX, personal_pipe, ""));
+        str = serialize(REMOVE_BOX, personal_pipe, box_name);
+    } else{ //list case
+        str = serialize(LIST_BOX, personal_pipe, "");
     } 
+
+    send_request(reg_pipe, str);
 
     int fd = open(personal_pipe, O_RDONLY);   //tries to open personal pipe after mbroker received the request
     if (fd == -1) {
