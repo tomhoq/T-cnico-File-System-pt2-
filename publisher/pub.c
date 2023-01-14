@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 
+
 void sig_handler(int sig){
   // UNSAFE: This handler uses non-async-signal-safe functions (printf())
     if (sig == SIGQUIT) { //ctrl + d
@@ -78,10 +79,11 @@ int main(int argc, char **argv) {
     }
 
     while(!feof(stdin)){ // Loop forever, waiting for EOF NOT WORKING YET
-        if(write(fd,"a",2)<0)
+        if(write(fd, "a",2) < 0)
             break;
     }
     printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     clear_session(fd, personal_pipe);
     return 0;
 }
+

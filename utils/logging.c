@@ -21,7 +21,7 @@ void send_request(int tx, char *r1) {
 /*Returns a pointer to a struct containing the char*/
 char *serialize(int code, char* client_pipe, char* box_name){
     char *r1 = (char*) malloc(sizeof(char)*400);
-    sprintf(r1, "%d|%s|%s", code, client_pipe, box_name);
+    sprintf(r1, "%d %s %s", code, client_pipe, box_name);
     r1 = realloc(r1, strlen(r1)+1);
     return r1;
 }

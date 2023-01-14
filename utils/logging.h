@@ -32,17 +32,16 @@ static const char ERROR_WRITING_PIPE[] = "Error writing to pipe";
 static const char SIGNAL_FAIL[] ="Failed to initialize signals";
 
 typedef struct box{
-    char boxname[BOXNAME];
+    char box_name[BOXNAME];
     int hasWriter;
     int n_readers;
     struct box *next;
 } box;
 
-typedef struct req{
-    int _code;
+typedef struct info{
     char _client_pipe[PIPENAME];
     char _box_name[BOXNAME];
-} request;
+} args;
 
 typedef enum {
     LOG_QUIET = 0,
