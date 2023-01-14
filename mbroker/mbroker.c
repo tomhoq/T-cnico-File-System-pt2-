@@ -6,6 +6,7 @@
 int reg_pipe;
 char register_pipe[PIPENAME];
 
+box *head;
 
 void sig_handler(int sig){
   // UNSAFE: This handler uses non-async-signal-safe functions (printf(),
@@ -144,9 +145,9 @@ int main(int argc, char **argv) {
     printf("Finished mbroker\n");
     return 0;
 }
-/*
+
 void create_box(args clientInput){
-    if(tfs_open(clientInput._box_name, TFS_O_CREAT)){//gestor deve dar errro ao criar caixa ja sxistente
+    if(tfs_open(clientInput._box_name, TFS_O_CREAT)){//gestor deve dar errro ao criar caixa ja existente
     }
     box b;
     strcpy(b.box_name, clientInput._box_name);
@@ -157,53 +158,56 @@ void create_box(args clientInput){
 void reg_publisher(args clientInput) {
     //aceitar se box existir e estiver livre
     //rejeitar se box ja tiver pub associado (fechar fifo)
-    //box boxToWrite = find_box(clientInput._box_name);
-    if (boxToWrite.hasWriter != 0){                //TO IMPLEMENT FIND BOX AND BOX RELATED FUNCTIONS!!!!!!!!
-        int fd = open(clientInput._client_pipe, O_RDONLY);  
-        if (fd == -1) {
-            fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
-        }
+    box* boxToWrite = find_box(clientInput._box_name, head);
+    int fd = open(clientInput._client_pipe, O_RDONLY);
+    if (fd == -1) {
+        fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
+        return;
+    }
+    if (boxToWrite->hasWriter != 0){              
         close(fd);                              // signals the publisher that his request failed
+        free(boxToWrite);
     }
     char* buffer = (char*) malloc(sizeof(char)*400);
-    int fh = tfs_open(boxToWrite.box_name, TFS_O_APPEND);  //manager already created file
+    int fh;
+    if((fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND))==-1){ //manager already created file
+        return;
+    }
 
-    while((read(fd, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
+    while((read(fh, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
         //tfs write should detect if file is deleted
         if(tfs_write(fh, buffer, strlen(buffer)+1)==-1)
             break;
 
     }
-    
+    close(fd); 
     free(buffer);
     buffer = NULL;
 }
 
-//find box devolve uma caixa da lista 
-//se nao existir na lista devolve uma caixa criada cujo argumento has_Writers deve ser inicializado a -1.
-box find_box();
-
 void reg_subscriber(args clientInput) {
-    box boxToWrite = find_box(clientInput._box_name);
-    if (boxToWrite.hasWriter == -1){             // box doesnt exist
-        int fd = open(clientInput._client_pipe, O_RDONLY);  
-        if (fd == -1) {
-            fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
-        }
+    box *boxToWrite = find_box(clientInput._box_name, head);
+    int fd = open(clientInput._client_pipe, O_RDONLY);
+    if (fd == -1) {
+        fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
+        return;
+    }
+    if (boxToWrite->hasWriter == -1){             // box doesnt exist  
         close(fd);                              // signals the publisher that his request failed
-        return NULL;
+        free(boxToWrite);
+        return;
     }
     char* buffer = (char*) malloc(sizeof(char)*400);
-    int fh = tfs_open(boxToWrite.box_name, TFS_O_APPEND);  //manager already created file
+    int fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND);  //manager already created file
 
     //tfs read should detect if file is deleted
     while(tfs_read(fh, buffer, strlen(buffer)+1)!=-1){  
         if(write(fh, buffer, strlen(buffer)+1)==-1)//detects if publisher closed the pipe
             break;
     }
-    
+    close(fd); 
     free(buffer);
     buffer = NULL;
-    return NULL;
+    return;
 }
-*/
+

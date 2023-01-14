@@ -3,23 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-
-
-void sig_handler(int sig){
-  // UNSAFE: This handler uses non-async-signal-safe functions (printf())
-    if (sig == SIGQUIT) { //ctrl + d
-        fprintf(stderr, "Caught SIGINT\n"); 
-        return; // Resume execution at point of interruption
-    }   // Must be SIGQUIT - print a message and terminate the process //ctrl + d
-    return;
-}
-
 int main(int argc, char **argv) {
-    
-    if (signal(SIGQUIT, sig_handler) == SIG_ERR) {
-        fprintf(stdout, "ERROR: %s\n", SIGNAL_FAIL);
-        exit(EXIT_FAILURE);
-    }
 
     if (argc != 4){
         fprintf(stdout, "ERROR: %s\n", INVALID_NUMBER_OF_ARGUMENTS);
@@ -30,6 +14,7 @@ int main(int argc, char **argv) {
     char register_pipe[PIPENAME]; 
     char personal_pipe[PIPENAME];
     char box_name[BOXNAME];
+    char std[PIPENAME];
     memset(register_pipe, '\0', sizeof(char)*PIPENAME);
     memset(personal_pipe, '\0', sizeof(char)*PIPENAME);
     memset(box_name, '\0', sizeof(char)*BOXNAME);
@@ -78,12 +63,14 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    while(!feof(stdin)){ // Loop forever, waiting for EOF NOT WORKING YET
-        if(write(fd, "a",2) < 0)
+    while(scanf("%s[^\n]", std) == 1){
+        if (write(fd, std, strlen(std)) < 0)
             break;
     }
+
     printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     clear_session(fd, personal_pipe);
     return 0;
 }
+
 

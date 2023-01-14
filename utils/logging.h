@@ -58,6 +58,12 @@ char *serialize(int code, char* client_pipe, char* box_name);
 
 void sig_handler(int sig);
 
+box *find_box(char box_name[], box *head);
+
+void insert_Box(char box_name[], box *head);
+
+void delete_Box(char box_name[], box *head);
+
 void set_log_level(log_level_t level);
 extern log_level_t g_level;
 
