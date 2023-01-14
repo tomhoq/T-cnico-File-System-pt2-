@@ -3,6 +3,10 @@
 #include <string.h>
 #include <pthread.h>
 
+void reg_publisher(args clientInput);
+void reg_subscriber(args clientInput);
+void create_box(args clientInput);
+
 int reg_pipe;
 char register_pipe[PIPENAME];
 
@@ -43,7 +47,7 @@ void *func_main(){
             switch(code) {
                 case 1:
                     printf("reg_pub(buffer\n");
-                    //reg_publisher(clientInput);
+                    reg_publisher(clientInput);
                     //atribui thread ao publisher
                     //a thread deve ir lendo do client pipe e imprimindo para o tfs
                     break;
@@ -164,10 +168,10 @@ void reg_publisher(args clientInput) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
         return;
     }
-    if (boxToWrite->hasWriter != 0){              
+    /*if (boxToWrite->hasWriter != 0){              
         close(fd);                              // signals the publisher that his request failed
         free(boxToWrite);
-    }
+    }*/
     char* buffer = (char*) malloc(sizeof(char)*400);
     int fh;
     if((fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND))==-1){ //manager already created file
@@ -176,6 +180,7 @@ void reg_publisher(args clientInput) {
 
     while((read(fh, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
         //tfs write should detect if file is deleted
+        printf("%s\n",buffer);
         if(tfs_write(fh, buffer, strlen(buffer)+1)==-1)
             break;
 

@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
     char register_pipe[PIPENAME]; 
     char personal_pipe[PIPENAME];
     char box_name[BOXNAME];
-    char std[PIPENAME];
+    char input[PIPENAME];
     memset(register_pipe, '\0', sizeof(char)*PIPENAME);
     memset(personal_pipe, '\0', sizeof(char)*PIPENAME);
     memset(box_name, '\0', sizeof(char)*BOXNAME);
@@ -57,14 +57,14 @@ int main(int argc, char **argv) {
     free(str);
 
     int fd = open(personal_pipe, O_WRONLY);   //tries to open pipe after mbroker received the request
-    if (fd == -1) {                           //program will freeze here while thread is not implemented
+    if (fd == -1) {                           //program will freeze here if thread is not implemented
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
         clear_session(fd, personal_pipe);
         return -1;
     }
 
-    while(scanf("%s[^\n]", std) == 1){
-        if (write(fd, std, strlen(std)) < 0)
+    while(scanf("%s[^\n]", input) == 1){
+        if (write(fd, input, strlen(input)) < 0)
             break;
     }
 
