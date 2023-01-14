@@ -20,6 +20,7 @@ static const __uint8_t CREATE_BOX = 3;
 static const __uint8_t REMOVE_BOX = 5;
 static const __uint8_t LIST_BOX = 7;
 
+static const char ERROR_CREATING_THREAD[] = "Couldn't create thread";
 static const char INVALID_SESSIONS[] = "Invalid number of sessions";
 static const char PIPENAME_TOO_BIG[] = "The pipe's name has too many characters";
 static const char INVALID_BOXNAME[] = "The box's name is invalid";

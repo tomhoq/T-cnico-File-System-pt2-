@@ -1,5 +1,6 @@
 #include "logging.h" 
 #include <string.h>
+#include <pthread.h>
 
 int reg_pipe;
 char register_pipe[PIPENAME];
@@ -14,10 +15,19 @@ void sig_handler(int sig){
     return;
 }
 
+/*void* func_publisher(char **args){
+    char* client_pipe, box_name; 
+    strcpy(client_pipe,args[0]);
+    strcpy(box_name,args[1]);
+    //open(box)
+}
+*/
 // implementar aqui a lista de boxes
 
 int main(int argc, char **argv) {
-
+    
+    pthread_t slave1;
+    
     if (signal(SIGINT, sig_handler) == SIG_ERR) {
         fprintf(stdout, "ERROR: %s\n", SIGNAL_FAIL);
         exit(EXIT_FAILURE);
@@ -57,6 +67,7 @@ int main(int argc, char **argv) {
     int code;
     char *client_pipe;
     char *box_name;
+    char *args[2];
 
     ssize_t broker_read= read(reg_pipe, buffer, sizeof(char)*400);
     
@@ -66,9 +77,24 @@ int main(int argc, char **argv) {
             code = atoi(strtok(buffer,"|"));
             client_pipe = strtok(NULL,"|");
             box_name = strtok(NULL,"|");
+            strcpy(args[0], client_pipe);
+            strcpy(args[1], box_name);
+            printf("%s %s\n", args[0], args[1]);
             switch(code) {
                 case 1:
                     printf("reg_pub(buffer\n");
+                    /*if (find_box(box_name).hasWriter == 1){
+                        int fd = open(client_pipe, O_RDONLY);  
+                        if (fd == -1) {
+                            fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
+                        }
+                        close(fd);                              // signals the publisher that his request failed
+                        break;
+                    }
+                    if (pthread_create(&tid, NULL, func_publisher, args) != 0) {  //TO IMPLEMENT FIND BOX AND BOX RELATED FUNCTIONS!!!!!!!!
+                        fprintf(stdout, "ERROR: %s\n", ERROR_CREATING_THREAD);
+                        return -1;
+                    }*/
                     //reg_publisher(box_name);
                     //atribui thread ao publisher
                     //a thread deve ir lendo do client pipe e imprimindo para o tfs
