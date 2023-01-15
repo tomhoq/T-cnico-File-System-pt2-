@@ -15,16 +15,12 @@ int main(int argc, char **argv) {
         
         fprintf(stderr, "Could not set signal handler\n");
         return EXIT_FAILURE;
-
-        //fprintf(stdout, "ERROR: %s\n", SIGNAL_FAIL);
-        //exit(EXIT_FAILURE);
     }
 
     if (argc != 4){
         fprintf(stdout, "ERROR: %s\n", INVALID_NUMBER_OF_ARGUMENTS);
         return -1;
     }
-    //fprintf(stderr, "usage: pub <register_pipe_name> <box_name>\n");
 
     char register_pipe[PIPENAME]; 
     char personal_pipe[PIPENAME];
@@ -39,7 +35,6 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", PIPENAME_TOO_BIG);
         return -1;
     }
-    printf("ghj\n");
 
     // Verifica se o box_name nao e demasiado grande
     if ((strlen(argv[3])>=BOXNAME)){
@@ -91,8 +86,6 @@ int main(int argc, char **argv) {
         if (sscanf(buf, "%d %[^\n]%*c", &code, output) == 2) 
             printf("%s\n", output);
     }
- 
-    //printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     clear_session(fd, personal_pipe);
     return 0;
 }

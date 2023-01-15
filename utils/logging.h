@@ -70,6 +70,8 @@ char *serializeAnswer(int code, int rcode, char* error_message);
 char *serializeListing(int code, uint8_t last, char* box_name, uint64_t size, 
 uint64_t pub, uint64_t sub);
 
+void iterate_box(box *head);
+
 void sig_handler(int sig);
 
 void free_boxes(box *head);

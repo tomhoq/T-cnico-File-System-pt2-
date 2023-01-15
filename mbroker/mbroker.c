@@ -20,7 +20,6 @@ void sig_handler(int sig){
   // UNSAFE: This handler uses non-async-signal-safe functions (printf(),
     if (sig == SIGINT) { //ctrl + c
         clear_session(reg_pipe, register_pipe);
-        fprintf(stderr, "Caught SIGINT\n");
         return; // Resume execution at point of interruption
     }   
     return;
@@ -36,9 +35,7 @@ void *func_main(){
 
     do {
         if(broker_read >0 ){
-            printf("%s\n",buffer);
             sscanf(buffer, "%d %s %s", &code, clientInput._client_pipe, clientInput._box_name);
-            printf("%s %s\n", clientInput._client_pipe, clientInput._box_name);
             if (strlen(clientInput._client_pipe) == 0 || strlen(clientInput._client_pipe) == 0) {
                 fprintf(stdout, "ERROR %s\n", "Wrong Client Input");
                 continue;   // TODO mudar depois?
@@ -46,31 +43,22 @@ void *func_main(){
 
             switch(code) {
                 case 1:
-                    printf("reg_pub(buffer)\n");
                     reg_publisher(clientInput);
-                    //atribui thread ao publisher
-                    //a thread deve ir lendo do client pipe e imprimindo para o tfs
                     break;
                 case 2:
-                    printf("reg_sub(buffer\n");
                     reg_subscriber(clientInput);
-                    //atribui thread ao subscriber
-                    //a thread deve ir lendo do tfs e imprimindo para o pipe do client
                     break;
                 case 3:
-                    printf("box_create(buffer)\n");
                     create_box(clientInput);
                     break;
                 case 5:
-                    printf("box_remove(buffer\n");
                     remove_box(clientInput);
                     break;
                 case 7:
-                    printf("box_list(buffe\n");
                     list_box(clientInput);
                     break;
                 default:
-                    printf("default\n");
+
                     break;
             };
 
@@ -103,8 +91,6 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", INVALID_SESSIONS);
         return -1;
     }
-
-    printf("FALTA USAR %d SESSIONS\n", max_sessions);
        
     strcpy(register_pipe, argv[1]);
 
@@ -133,7 +119,6 @@ int main(int argc, char **argv) {
     if(tfs_destroy()==-1)
         fprintf(stdout, "ERROR: Couldn't clear tfs\n");
     clear_session(reg_pipe, register_pipe);
-    printf("Finished mbroker\n");
     return 0;
 }
 
@@ -163,11 +148,13 @@ void create_box(args clientInput){
             free(error_msg);
             return;
         }
-        //printf("creating bx\n");
+        
         boxToCreate->hasWriter = 0;
         boxToCreate->n_readers = 0;
         strcpy(boxToCreate->box_name, clientInput._box_name);
+        //iterate_box(head);
         head = insert_box(boxToCreate, head);
+        //iterate_box(head);
     }
     char *msg = serializeAnswer(ANSWER_CREATE_BOX, return_code, error_msg);
     send_request(fd, msg);
@@ -180,7 +167,6 @@ void create_box(args clientInput){
 }
 
 void list_box(args clientInput) {
-    printf("enter listing\n");
     int fd = open(clientInput._client_pipe, O_WRONLY);
     if (fd == -1) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
@@ -190,36 +176,29 @@ void list_box(args clientInput) {
     char *str;
     uint8_t last = 0;
     uint64_t pub, sub, size = 0;
-    printf("aadwadawdwa\n");
 
     if(current == NULL){ //no boxes
-        printf("no boxes\n");
         last = 1;
         char box_empty[BOXNAME];
         memset(box_empty, '\0', BOXNAME);
         pub=0;
         sub=0;
         str = serializeListing(LIST_ANSWER, last, box_empty, size, pub, sub);
-        printf("str: %s\n", str);
         send_request(fd, str);
         free(str);
         close(fd);
         return;
     }
-    printf("abbbbbb\n");
 
     while(current!= NULL){
         size = sizeof(current);
-        printf("cccccc\n");
-
-        if(current->next == NULL)
+        if(current->next == NULL){
             last = 1;
+        }
         
         pub = (uint64_t) current->hasWriter;
         sub = (uint64_t) current->n_readers;
-        printf("%s\n",clientInput._box_name);
-        str = serializeListing(LIST_ANSWER, last, clientInput._box_name, size, pub, sub);
-        printf("str: %s\n", str);
+        str = serializeListing(LIST_ANSWER, last, current->box_name, size, pub, sub);
         send_request(fd, str);
         free(str);
         current = current->next;
@@ -228,7 +207,7 @@ void list_box(args clientInput) {
 }
 
 void remove_box(args clientInput) {
-    //printf("enter remove\n");
+    iterate_box(head);
     int fd = open(clientInput._client_pipe, O_WRONLY);
     if (fd == -1) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
@@ -239,7 +218,7 @@ void remove_box(args clientInput) {
     memset(error_msg,'\0',sizeof(char)*(ERROR_MSG+100));
     box *boxToDelete = find_box(clientInput._box_name, head);
     int fh;
-    if ((fh=tfs_open(clientInput._box_name, TFS_O_APPEND)) ==-1 || boxToDelete->n_readers == -1) {  //não existe
+    if ((fh=tfs_open(clientInput._box_name, TFS_O_APPEND)) ==-1 || boxToDelete->n_readers == -1) {  //nao existe
         free(boxToDelete);
         strcpy(error_msg, "Box doesn't exist\n");
         return_code = -1;
@@ -257,24 +236,20 @@ void remove_box(args clientInput) {
         }
         
     }
-    printf("error_msg: %s", error_msg);
     char *msg = serializeAnswer(ANSWER_CREATE_BOX, return_code, error_msg);
     send_request(fd, msg);
-
+    iterate_box(head);
     free(error_msg);
     close(fd);
 }
 
-
 void reg_publisher(args clientInput) {
-    //printf("entered publisher\n");
     int fd = open(clientInput._client_pipe, O_RDONLY);
     if (fd == -1) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
         return;
     }
     box* boxToWrite = find_box(clientInput._box_name, head);
-    //printf("Box has writer? %d\n", (boxToWrite->hasWriter));
     if (boxToWrite->hasWriter != 0){        //box doesnt exist or doesnt have writers or full writers
         printf("cant create box, finishing\n");
         clear_session(fd, clientInput._client_pipe);   // signals the publisher that his request failed
@@ -282,7 +257,6 @@ void reg_publisher(args clientInput) {
         return;
     }
     int fh;
-    //printf("opening\n");
     if((fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND))==-1){ //file doesnt exist
         free(boxToWrite);
         close(fd);
@@ -294,10 +268,8 @@ void reg_publisher(args clientInput) {
     int code;
     ssize_t b;
     boxToWrite->hasWriter = 1;
-    //printf("start reading\n");
     while((read(fd, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
         //tfs write should detect if file is deleted
-        //printf("BUFF:%s\n", buffer);
         sscanf(buffer, "%d %[^\n]%*c", &code, message);
         if (strlen(message) == 0) {
             break;
@@ -305,7 +277,6 @@ void reg_publisher(args clientInput) {
         strcat(message," ");
         if((b=tfs_write(fh, message, strlen(message))+1)<0)
             break;
-        printf("%ld\n",b);
         memset(buffer, '\0', sizeof(char)*(MSIZE+100));
 
     }
@@ -313,7 +284,6 @@ void reg_publisher(args clientInput) {
         fprintf(stdout,"ERROR %s\n", "Failed to close file");
     }
     boxToWrite->hasWriter = 0;
-    printf("finished reading");
     close(fd); 
     free(buffer);
     buffer = NULL;
@@ -327,10 +297,9 @@ void reg_subscriber(args clientInput) {
             fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
             return;
         }
-    printf("entered subscriber\n");
     box *boxToRead = find_box(clientInput._box_name, head);
-    printf("Box exists? %d\n", (boxToRead->hasWriter));
-    if (boxToRead->hasWriter == -1){             // box doesnt exist  
+    //Box exists?
+    if (boxToRead->hasWriter == -1){    // box doesnt exist  
         clear_session(fd, clientInput._client_pipe);    // signals the publisher that his request failed
         free(boxToRead);
         return;
@@ -348,19 +317,15 @@ void reg_subscriber(args clientInput) {
     size_t len;
     ssize_t b, prev = 0;
     boxToRead->n_readers += 1; //increase readers
-    while((b = tfs_read(fh, buffer, MSIZE)) != -1){   //ESTÁ A FICAR PRESO AQUI. o unlink exterior que se 
-                                                    //dá no sub.c não funciona dentro do TFSma                                                      
+    while((b = tfs_read(fh, buffer, MSIZE)) != -1){                                                                                                    
 
         sleep(1);
         if (b == prev)
             continue;
         while(b>0){
             len = strlen(buffer);
-            printf("read from tfs: %s\n", buffer);
             msg = serializeMessage(SERVER_SEND, buffer);
-            printf("ESTA É A MENS. QUE SERÁ ENVIADA:%s\n", msg);
             if((write(fd, msg, strlen(msg))) < 0){      //detects if subscriber closed the pipe
-                printf("subs has left the chat\n");
                 break;
             }
             
@@ -375,9 +340,6 @@ void reg_subscriber(args clientInput) {
         fprintf(stdout,"ERROR %s\n", "Failed to close file");
     }
     boxToRead->n_readers -= 1;
-    printf("i am leaving\n");
-    
-    printf("leaving subscriber\n");
     unlink(clientInput._client_pipe);
     free(buffer);
     buffer = NULL;

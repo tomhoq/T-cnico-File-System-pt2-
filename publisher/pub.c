@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", INVALID_NUMBER_OF_ARGUMENTS);
         return -1;
     }
-    //fprintf(stderr, "usage: pub <register_pipe_name> <box_name>\n");
 
     char register_pipe[PIPENAME]; 
     char personal_pipe[PIPENAME];
@@ -80,18 +79,17 @@ int main(int argc, char **argv) {
     if ((state = write(fd, " ", 1)) < 0) {
         return -1;
     }
+
     while (fgets(input, MSIZE, stdin) != NULL){
-        //printf("%s\n", input);
+
         msg = serializeMessage(SEND_CODE, input);
-        if (write(fd, msg, strlen(msg)+1) != strlen(msg)+1) {
+        if (write(fd, msg, strlen(msg)+1) < 0) {
             free(msg);
             break;
         }
-        //printf("TT:%s\n", input);
         free(msg);
     }
 
-    //printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     clear_session(fd, personal_pipe);
     return 0;
 }

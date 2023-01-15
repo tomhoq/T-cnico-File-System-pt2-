@@ -40,8 +40,13 @@ box *insert_box(box *new_box, box *head){
         temp = temp->next;
 
     temp->next = new_box;
-
     return head;
+}
+void iterate_box(box *head){
+    box *c = head;
+    while (c != NULL){
+        c = c->next;
+    }
 }
 box *delete_box(char box_name[], box *head){
     // Store head node
@@ -56,11 +61,10 @@ box *delete_box(char box_name[], box *head){
  
     // Search for the key to be deleted, keep track of the
     // previous node as we need to change 'prev->next'
-    while (temp != NULL && !strcmp(temp->box_name, box_name)) {
+    while (temp != NULL && strcmp(temp->box_name, box_name)) {
         prev = temp;
         temp = temp->next;
     }
- 
     // If key was not present in linked list
     if (temp == NULL){
         fprintf(stdout, "ERROR %s\n", "Failed to find box");
@@ -71,7 +75,6 @@ box *delete_box(char box_name[], box *head){
     prev->next = temp->next;
  
     free(temp); // Free memory 
-    printf("deleted box\n");
     return head;
 }
 

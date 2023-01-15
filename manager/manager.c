@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
         }
         strcat(box_name ,argv[4]);
     }
-    
 
     strcpy(register_pipe, argv[1]);
     strcpy(personal_pipe, argv[2]);
@@ -88,12 +87,9 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", "Failed to read");
     }
     sscanf(buffer, "%d %[^\n]%*c", &code, input);
-    printf("input %s\n", input);
-    printf("CODE:%d\n",code);    
 
     if (code != 8){
         sscanf(input, "%d %s", &return_code, error_msg);
-        //printf("%d %s\n",return_code, error_msg);
         if(return_code == -1)
             fprintf(stdout, "ERROR %s\n", error_msg);
         else
@@ -102,7 +98,6 @@ int main(int argc, char **argv) {
     else{
         int last;
         char name[BOXNAME];
-        printf("INPUT:%s\n", input);
         unsigned long int size, p, s;
         strcpy(buffer, input);
         sscanf(buffer, "%d %s %lu %lu %lu", &last, name, &size, &p, &s);
@@ -110,20 +105,20 @@ int main(int argc, char **argv) {
             fprintf(stdout, " 0 0 0\n");
         }
         else
-            fprintf(stdout, "name:%s size:%zu pub:%zu sub:%zu\n", name, size, p, s);
+            fprintf(stdout, "%s %zu %zu %zu\n", name, size, p, s);
         while(last != 1){
             memset(buffer, '\0',strlen(buffer));      
             if(read(fd, buffer, MSIZE) <= 0){
                 fprintf(stdout, "ERROR: %s\n", "Failed to read");
+                break;
             }
-            sscanf(buffer, "%d %s %lu %lu %lu", &last, name, &size , &p, &s);
-            fprintf(stdout, "next: %s %zu %zu %zu\n", name, size, p, s); 
+            sscanf(buffer, "%d %d %s %lu %lu %lu", &code, &last, name, &size , &p, &s);
+            fprintf(stdout, "%s %zu %zu %zu\n", name, size, p, s); 
         }
     }
     
     free(buffer);
     clear_session(fd, personal_pipe);
-    //printf("%s %s %s %s\n", register_pipe, personal_pipe, command, box_name);
 
     return 0;
 }
