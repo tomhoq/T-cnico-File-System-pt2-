@@ -5,8 +5,8 @@ log_level_t g_level = LOG_QUIET;
 void set_log_level(log_level_t level) { g_level = level; }
 
 void clear_session(int fd, char* fn){
-    close(fd);
     unlink(fn);
+    close(fd);
 }
 
 box *find_box(char box_name[], box *head){

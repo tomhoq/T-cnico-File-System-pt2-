@@ -1,20 +1,32 @@
 #include "logging.h"
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
+
+bool shouldRun = true;
+
+void sighandler() {
+    shouldRun = false;
+}
 
 
-void sig_handler(int sig){
+/*void sig_handler(int sig){
   // UNSAFE: This handler uses non-async-signal-safe functions (printf(),
     if (sig == SIGINT) { //ctrl + c
         return; // Resume execution at point of interruption
     }  
     return;
-}
+}*/
+
 int main(int argc, char **argv) {
 
-    if (signal(SIGINT, sig_handler) == SIG_ERR) {
-        fprintf(stdout, "ERROR: %s\n", SIGNAL_FAIL);
-        exit(EXIT_FAILURE);
+    if (signal(SIGINT, &sighandler) == SIG_ERR) {
+        
+        fprintf(stderr, "Could not set signal handler\n");
+        return EXIT_FAILURE;
+
+        //fprintf(stdout, "ERROR: %s\n", SIGNAL_FAIL);
+        //exit(EXIT_FAILURE);
     }
 
     if (argc != 4){
@@ -61,7 +73,7 @@ int main(int argc, char **argv) {
 //PERSONAL PIPE-----------------------------------------------------------------
 
     //Verificar que personal pipe ainda n existe
-    if(mkfifo(personal_pipe, 0644) < 0){
+    if(mkfifo(personal_pipe, S_IRWXU) < 0){ //0644
         fprintf(stdout, "ERROR: %s\n", EXISTENT_PIPE);
         return -1;
     }   
@@ -81,16 +93,17 @@ int main(int argc, char **argv) {
 
     char buf[MSIZE], output[MSIZE];
     int code;
-    printf("AA\n");
+    if (read(fd, buf, 1024) < 0)
+        printf("HUSHUHSUHSU\n");
+    printf("buf:%s\n", buf);
 
-    while (read(fd, buf, sizeof(buf)) > 0) {
-        sscanf(buf, "%d %[^\n]%*c", &code, output);
-        sleep(1);
-        printf("%s\n", output);
+    while (shouldRun) {        
+        if (sscanf(buf, "%d %[^\n]%*c", &code, output) == 2) 
+            printf("%s\n", output);
     }
-    close(fd);
+    printf("SAIIIIIIIIIIIIIIIII\n");
     printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
-    unlink(personal_pipe);
+    clear_session(fd, personal_pipe);
     return 0;
 }
 

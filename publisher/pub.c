@@ -1,9 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include "logging.h"
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
+
+bool shouldRun = true;
+
+void sighandler() {
+    shouldRun = false;
+}
 
 int main(int argc, char **argv) {
+
+    if (signal(SIGINT, &sighandler) == SIG_ERR) {
+        fprintf(stderr, "Could not set signal handler\n");
+        return EXIT_FAILURE;
+    }
 
     if (argc != 4){
         fprintf(stdout, "ERROR: %s\n", INVALID_NUMBER_OF_ARGUMENTS);
@@ -47,7 +61,7 @@ int main(int argc, char **argv) {
 //PERSONAL PIPE-------------------------------------------------------
     printf("B\n");
     //Verificar que personal pipe ainda n existe
-    if(mkfifo(personal_pipe, 0644) < 0){
+    if(mkfifo(personal_pipe, S_IRWXU) < 0){     //0644
         fprintf(stdout, "ERROR: %s\n", EXISTENT_PIPE);
         return -1;
     }
@@ -66,22 +80,21 @@ int main(int argc, char **argv) {
     
     char *msg;
     printf("C\n");
+    ssize_t state;
     sleep(1);
-    if (write(fd, "\0", 1) < 0) {
-        printf("aaaaa\n");
-        clear_session(fd, personal_pipe);
-        return 0;
+    //confirmação
+    if ((state = write(fd, " ", 1)) < 0) {
+        return -1;
     }
     printf("BELEM\n");
-    while(scanf("%[^\n]%*c", input) == 1){
-        strcat(input, "\0");
+    while (fgets(input, MSIZE, stdin) != NULL){
+        printf("INPUT:%s\n", input);
         msg = serializeMessage(SEND_CODE, input);
-        printf("a\n");
-        if (write(fd, msg, strlen(msg)+1) < 0) {
-            printf("aaaaa\n");
+        if (write(fd, msg, strlen(msg)+1) != strlen(msg)+1) {
+            printf("exit:\n");
+            free(msg);
             break;
         }
-
         printf("TT:%s\n", input);
         free(msg);
     }

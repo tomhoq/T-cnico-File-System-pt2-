@@ -176,7 +176,7 @@ void reg_publisher(args clientInput) {
     printf("Box has writer? %d\n", (boxToWrite->hasWriter));
     if (boxToWrite->hasWriter != 0){        //box doesnt exist or doesnt have writers or full writers
         printf("cant create box, finishing\n");
-        close(fd);                              // signals the publisher that his request failed
+        clear_session(fd, clientInput._client_pipe);   // signals the publisher that his request failed
         free(boxToWrite);
         return;
     }
@@ -195,9 +195,10 @@ void reg_publisher(args clientInput) {
     printf("start reading\n");
     while((read(fd, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
         //tfs write should detect if file is deleted
+        printf("BUFF:%s\n", buffer);
         sscanf(buffer, "%d %[^\n]%*c", &code, message);
-        printf("%s:\n", message);
-        strcat(buffer,"\n");
+        printf("MESS:%s", message);
+        strcat(message," ");
         if((b=tfs_write(fh, message, strlen(message))+1)<0)
             break;
         printf("%ld\n",b);
@@ -238,15 +239,17 @@ void reg_subscriber(args clientInput) {
     //tfs read should detect if file is deleted
     size_t len;
     ssize_t b;
-    while((b = tfs_read(fh, buffer, MSIZE))!=-1){ 
-        printf("AHAHAHAHAHA:%s\n", buffer);
+        
+    while((b = tfs_read(fh, buffer, MSIZE))!=-1){   //ESTÁ A FICAR PRESO AQUI. o unlink exterior que se 
+                                                    //dá no sub.c não funciona dentro do TFS
         sleep(1);
         if (strcmp(buffer,"\0")){
             while(b>0){
                 len = strlen(buffer);
                 printf("read from tfs: %s\n", buffer);
                 msg = serializeMessage(SERVER_SEND, buffer);
-                if(write(fd, msg, strlen(msg))<0){//detects if publisher closed the pipe
+                printf("ESTA É A MENS. QUE SERÁ ENVIADA:%s\n", msg);
+                if((write(fd, msg, sizeof(msg))) < 0){//detects if subscriber closed the pipe
                     printf("subs has left the chat\n");
                     break;
                 }
@@ -256,8 +259,16 @@ void reg_subscriber(args clientInput) {
                 b -= (ssize_t) len +1;
             }
         }
+        if(write(fd, " ", 1) < 0){//detects if subscriber closed the pipe {
+            printf("subs has left the chat\n");
+            break;
+          }
+        
     }
 
+    
+
+    printf("i am leaving\n");
     if (tfs_close(fh) == -1){
         fprintf(stdout,"ERROR %s\n", "Failed to close file");
     }
