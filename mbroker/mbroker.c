@@ -22,14 +22,6 @@ void sig_handler(int sig){
     return;
 }
 
-/*void* func_publisher(char **args){
-    char* client_pipe, box_name; 
-    strcpy(client_pipe,args[0]);
-    strcpy(box_name,args[1]);
-    //open(box)
-}
-*/
-// implementar aqui a lista de boxes
 
 void *func_main(){
     char* buffer = (char*) malloc(sizeof(char)*400);
@@ -39,48 +31,32 @@ void *func_main(){
     args clientInput;
 
     do {
-        printf("bb\n");
         if(broker_read >0 ){
             printf("%s\n",buffer);
             sscanf(buffer, "%d %s %s", &code, clientInput._client_pipe, clientInput._box_name);
             printf("%s %s\n", clientInput._client_pipe, clientInput._box_name);
             switch(code) {
                 case 1:
-                    printf("reg_pub(buffer\n");
+                    printf("reg_pub(buffer)\n");
                     reg_publisher(clientInput);
                     //atribui thread ao publisher
                     //a thread deve ir lendo do client pipe e imprimindo para o tfs
                     break;
                 case 2:
                     printf("reg_sub(buffer\n");
-                    //reg_subscriber(clientInput);
+                    reg_subscriber(clientInput);
                     //atribui thread ao subscriber
                     //a thread deve ir lendo do tfs e imprimindo para o pipe do client
                     break;
                 case 3:
                     printf("box_create(buffer)\n");
-                    //create_box(clientInput);
-                    break;
-                case 4:
-                    printf("resposta ao pedido de criacao\n");
+                    create_box(clientInput);
                     break;
                 case 5:
                     printf("box_remove(buffer\n");
                     break;
-                case 6:
-                    printf("resposta ao pedido de remocao\n");
-                    break;
                 case 7:
                     printf("box_list(buffe\n");
-                    break;
-                case 8:
-                    printf("resposta ao pedido de listagem\n");
-                    break;
-                case 9:
-                    printf("mensagens enviadas pelo publisher\n");
-                    break;
-                case 10:          
-                    printf("mensagens enviadas pelo subscriber\n");
                     break;
                 default:
                     printf("default\n");
@@ -89,15 +65,15 @@ void *func_main(){
 
         }
         
-        printf("aaaaa\n");
-    } while((broker_read = read(reg_pipe, buffer, MSIZE)) >= 0);
+    } while((broker_read = read(reg_pipe, buffer, sizeof(char)*400)) >= 0);
     free(buffer);
     buffer = NULL;
     return NULL;
 }
 
 int main(int argc, char **argv) {
-    tfs_init(NULL);
+    if(tfs_init(NULL)==-1)
+        return -1;
     pthread_t main_thread;
     
     if (signal(SIGINT, sig_handler) == SIG_ERR) {
@@ -117,10 +93,6 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    //fprintf(stderr, "usage: mbroker <pipename>\n");
-
-
-    
     printf("FALTA USAR %d SESSIONS\n", max_sessions);
        
     strcpy(register_pipe, argv[1]);
@@ -145,72 +117,152 @@ int main(int argc, char **argv) {
     }
     
     //mbroker
+    //apagar lista de boxes
     clear_session(reg_pipe, register_pipe);
     printf("Finished mbroker\n");
     return 0;
 }
 
 void create_box(args clientInput){
-    if(tfs_open(clientInput._box_name, TFS_O_CREAT)){//gestor deve dar errro ao criar caixa ja existente
+    printf("enter create\n");
+    int fd = open(clientInput._client_pipe, O_WRONLY);
+    if (fd == -1) {
+        fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
+        return;
     }
-    box b;
-    strcpy(b.box_name, clientInput._box_name);
-    //insertBox(b);
+    int32_t return_code = 0;
+    char *error_msg = malloc(sizeof(char)*(ERROR_MSG+100));
+    memset(error_msg,'\0',sizeof(char)*(ERROR_MSG+100));
+    box *boxToCreate = find_box(clientInput._box_name, head);
+    int fh;
+    if((fh=tfs_open(clientInput._box_name, TFS_O_APPEND)) !=-1 || boxToCreate->hasWriter != -1){//gestor deve dar erro ao tentar criar caixa ja existente
+        return_code = -1;
+        strcpy(error_msg, "Can't create box, already exists");
+        free(boxToCreate);
+        if (tfs_close(fh) == -1)
+            fprintf(stdout,"ERROR %s\n", "Failed to close file");
+    }
+    else{
+        printf("creating file:%d\n", fh);
+        if((fh = tfs_open(clientInput._box_name, TFS_O_CREAT))==-1){ //file musnt exist
+            fprintf(stdout, "ERROR: %s\n", "Failed to open file");
+            free(error_msg);
+            return;
+        }
+        printf("creating bx\n");
+        boxToCreate->hasWriter = 0;
+        boxToCreate->n_readers = 0;
+        strcpy(boxToCreate->box_name, clientInput._box_name);
+        head = insert_box(boxToCreate, head);
+    }
+    char *msg = serializeAnswer(ANSWER_CREATE_BOX, return_code, error_msg);
+    send_request(fd, msg);
 
+    if (tfs_close(fh) == -1){
+        fprintf(stdout,"ERROR %s\n", "Failed to close file");
+    }
+
+    free(error_msg);
 }
 
 void reg_publisher(args clientInput) {
-    //aceitar se box existir e estiver livre
-    //rejeitar se box ja tiver pub associado (fechar fifo)
-    box* boxToWrite = find_box(clientInput._box_name, head);
+    printf("entered publisher\n");
     int fd = open(clientInput._client_pipe, O_RDONLY);
     if (fd == -1) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
         return;
     }
-    /*if (boxToWrite->hasWriter != 0){              
+    box* boxToWrite = find_box(clientInput._box_name, head);
+    printf("Box has writer? %d\n", (boxToWrite->hasWriter));
+    if (boxToWrite->hasWriter != 0){        //box doesnt exist or doesnt have writers or full writers
+        printf("cant create box, finishing\n");
         close(fd);                              // signals the publisher that his request failed
         free(boxToWrite);
-    }*/
-    char* buffer = (char*) malloc(sizeof(char)*400);
-    int fh;
-    if((fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND))==-1){ //manager already created file
         return;
     }
-
-    while((read(fh, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
+    int fh;
+    printf("opening\n");
+    if((fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND))==-1){ //file doesnt exist
+        free(boxToWrite);
+        close(fd);
+        return;
+    }
+    char* buffer = (char*) malloc(sizeof(char)*(MSIZE+100));
+    char message[MSIZE];
+    memset(message, '\0', MSIZE);
+    int code;
+    ssize_t b;
+    printf("start reading\n");
+    while((read(fd, buffer, MSIZE)) > 0){  //detects if publisher closed the pipe
         //tfs write should detect if file is deleted
-        printf("%s\n",buffer);
-        if(tfs_write(fh, buffer, strlen(buffer)+1)==-1)
+        sscanf(buffer, "%d %[^\n]%*c", &code, message);
+        printf("%s:\n", message);
+        strcat(buffer,"\n");
+        if((b=tfs_write(fh, message, strlen(message))+1)<0)
             break;
+        printf("%ld\n",b);
+        memset(buffer, '\0', sizeof(char)*(MSIZE+100));
 
     }
+    if (tfs_close(fh) == -1){
+        fprintf(stdout,"ERROR %s\n", "Failed to close file");
+    }
+    printf("finished reading");
     close(fd); 
     free(buffer);
     buffer = NULL;
 }
 
+
 void reg_subscriber(args clientInput) {
-    box *boxToWrite = find_box(clientInput._box_name, head);
-    int fd = open(clientInput._client_pipe, O_RDONLY);
+    printf("entered subscriber\n");
+    int fd = open(clientInput._client_pipe, O_WRONLY);
     if (fd == -1) {
         fprintf(stdout, "ERROR: %s\n", UNEXISTENT_PIPE);
         return;
     }
-    if (boxToWrite->hasWriter == -1){             // box doesnt exist  
+    box *boxToRead = find_box(clientInput._box_name, head);
+    printf("Box exists? %d\n", (boxToRead->hasWriter));
+    if (boxToRead->hasWriter == -1){             // box doesnt exist  
         close(fd);                              // signals the publisher that his request failed
-        free(boxToWrite);
+        free(boxToRead);
         return;
     }
-    char* buffer = (char*) malloc(sizeof(char)*400);
-    int fh = tfs_open(boxToWrite->box_name, TFS_O_APPEND);  //manager already created file
-
-    //tfs read should detect if file is deleted
-    while(tfs_read(fh, buffer, strlen(buffer)+1)!=-1){  
-        if(write(fh, buffer, strlen(buffer)+1)==-1)//detects if publisher closed the pipe
-            break;
+    
+    int fh = tfs_open(boxToRead->box_name, TFS_O_CREAT);  //manager already created file
+    if (fh == -1){
+        close(fd);
     }
-    close(fd); 
+    char *buffer = (char*) malloc(sizeof(char)*(MSIZE+100));
+    char *msg;
+    //tfs read should detect if file is deleted
+    size_t len;
+    ssize_t b;
+    while((b = tfs_read(fh, buffer, MSIZE))!=-1){ 
+        printf("AHAHAHAHAHA:%s\n", buffer);
+        sleep(1);
+        if (strcmp(buffer,"\0")){
+            while(b>0){
+                len = strlen(buffer);
+                printf("read from tfs: %s\n", buffer);
+                msg = serializeMessage(SERVER_SEND, buffer);
+                if(write(fd, msg, strlen(msg))<0){//detects if publisher closed the pipe
+                    printf("subs has left the chat\n");
+                    break;
+                }
+                memset(buffer, '\0', sizeof(char)*(MSIZE+100));
+                free(msg);
+                buffer += len +1;
+                b -= (ssize_t) len +1;
+            }
+        }
+    }
+
+    if (tfs_close(fh) == -1){
+        fprintf(stdout,"ERROR %s\n", "Failed to close file");
+    }
+    printf("leaving subscriber\n");
+    close(fd);
     free(buffer);
     buffer = NULL;
     return;

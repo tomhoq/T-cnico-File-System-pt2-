@@ -23,17 +23,17 @@ box *find_box(char box_name[], box *head){
     return unexistent_box;
 }
 
-box *insert_box(char box_name[], box *head){
-    box *newBox = malloc(sizeof(box));
-    strcpy(newBox->box_name,box_name);
-    newBox->next = NULL;
-
-    box *temp = head;
-    while(temp->next != NULL){
-        temp = temp->next;
+box *insert_box(box *new_box, box *head){
+    new_box->next = NULL;
+    if (head == NULL) {
+        head = new_box;
+        return head;
     }
+    box *temp = head;
+    while(temp->next != NULL)
+        temp = temp->next;
 
-    temp->next = newBox;
+    temp->next = new_box;
     return head;
 }
 /*
@@ -66,7 +66,24 @@ void send_request(int tx, char *r1) {
 /*Returns a pointer to a struct containing the char*/
 char *serialize(int code, char* client_pipe, char* box_name){
     char *r1 = (char*) malloc(sizeof(char)*400);
+    memset(r1,'\0',400);
     sprintf(r1, "%d %s %s", code, client_pipe, box_name);
+    r1 = realloc(r1, strlen(r1)+1);
+    return r1;
+}
+
+char *serializeAnswer(int code, int rcode, char* error_message){
+    char *r1 = (char*) malloc(sizeof(char)*1300);
+    memset(r1,'\0',1300);
+    sprintf(r1, "%d %d %s", code, rcode, error_message);
+    r1 = realloc(r1, strlen(r1)+1);
+    return r1;
+}
+
+char *serializeMessage(int code, char* msg){
+    char *r1 = (char*) malloc(sizeof(char)*(ERROR_MSG+50));
+    memset(r1,'\0',ERROR_MSG+50);
+    sprintf(r1, "%d %s", code, msg);
     r1 = realloc(r1, strlen(r1)+1);
     return r1;
 }

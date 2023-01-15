@@ -6,7 +6,6 @@
 void sig_handler(int sig){
   // UNSAFE: This handler uses non-async-signal-safe functions (printf(),
     if (sig == SIGINT) { //ctrl + c
-        fprintf(stderr, "Caught SIGINT\n");
         return; // Resume execution at point of interruption
     }  
     return;
@@ -26,15 +25,19 @@ int main(int argc, char **argv) {
 
     char register_pipe[PIPENAME]; 
     char personal_pipe[PIPENAME];
-    char box_name[BOXNAME];
+    char box_name[BOXNAME+1];
+
     memset(register_pipe, '\0', sizeof(char)*PIPENAME);
     memset(personal_pipe, '\0', sizeof(char)*PIPENAME);
-    memset(box_name, '\0', sizeof(char)*BOXNAME);
+    memset(box_name, '\0', sizeof(char)*(BOXNAME+1));
     
+    box_name[0] = '/';
     if ((strlen(argv[1])>=PIPENAME) || strlen(argv[2])>=PIPENAME){
         fprintf(stdout, "ERROR: %s\n", PIPENAME_TOO_BIG);
         return -1;
     }
+    printf("ghj\n");
+
     // Verifica se o box_name nao e demasiado grande
     if ((strlen(argv[3])>=BOXNAME)){
         fprintf(stdout, "ERROR: %s\n", INVALID_BOXNAME);
@@ -43,7 +46,7 @@ int main(int argc, char **argv) {
 
     strcpy(register_pipe, argv[1]);
     strcpy(personal_pipe, argv[2]);
-    strcpy(box_name, argv[3]);
+    strcat(box_name ,argv[3]);
 
 
 //REGISTER PIPE-----------------------------------------------------------------
@@ -76,12 +79,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    for (;;) { // Loop forever, waiting for signals
-        if(write(fd,"",1)<0)
-            break;
+    char buf[MSIZE], output[MSIZE];
+    int code;
+    printf("AA\n");
+
+    while (read(fd, buf, sizeof(buf)) > 0) {
+        sscanf(buf, "%d %[^\n]%*c", &code, output);
+        sleep(1);
+        printf("%s\n", output);
     }
+    close(fd);
     printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
-    clear_session(fd, personal_pipe);
+    unlink(personal_pipe);
     return 0;
 }
 

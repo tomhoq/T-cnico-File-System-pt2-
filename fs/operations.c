@@ -88,6 +88,7 @@ int tfs_open(char const *name, tfs_file_mode_t mode) {
             WARN("failed to unlock mutex: %s", strerror(errno));
             return -1;
         }
+
         return -1;
     }
 
@@ -125,9 +126,9 @@ int tfs_open(char const *name, tfs_file_mode_t mode) {
                 WARN("failed to unlock mutex: %s", strerror(errno));
                 return -1;
             }
+
             return -1; // no space in inode table
         }
-
         // Add entry in the root directory
         if (add_dir_entry(root_dir_inode, name + 1, inum) == -1) {
             inode_delete(inum);
@@ -135,9 +136,9 @@ int tfs_open(char const *name, tfs_file_mode_t mode) {
                 WARN("failed to unlock mutex: %s", strerror(errno));
                 return -1;
             }
+
             return -1; // no space in directory
         }
-
         offset = 0;
     } else {
         if (pthread_mutex_unlock(&g_library_mutex) == -1) {

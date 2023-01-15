@@ -1,9 +1,10 @@
 #ifndef __UTILS_LOGGING_H__
 #define __UTILS_LOGGING_H__
 
+#define ERROR_MSG 1024
 #define PIPENAME 256
 #define BOXNAME 32
-#define MSIZE 256
+#define MSIZE 1024
 #define COMMAND 8
 
 #include <signal.h>
@@ -17,8 +18,11 @@
 static const __uint8_t REGISTER_PUBLISHER = 1;
 static const __uint8_t REGISTER_SUBSCRIBER = 2;
 static const __uint8_t CREATE_BOX = 3;
+static const __uint8_t ANSWER_CREATE_BOX = 4;
 static const __uint8_t REMOVE_BOX = 5;
 static const __uint8_t LIST_BOX = 7;
+static const __uint8_t SEND_CODE = 9;
+static const __uint8_t SERVER_SEND = 10;
 
 static const char ERROR_CREATING_THREAD[] = "Couldn't create thread";
 static const char INVALID_SESSIONS[] = "Invalid number of sessions";
@@ -49,6 +53,7 @@ typedef enum {
     LOG_VERBOSE = 2,
 } log_level_t;
 
+//unlinks file 
 void clear_session(int fd, char* fn);
 /*writes to pipe tx a pointer with information*/
 void send_request(int tx, char *r1);
@@ -56,13 +61,17 @@ void send_request(int tx, char *r1);
 /*Returns a pointer to a struct containing the request*/
 char *serialize(int code, char* client_pipe, char* box_name);
 
+char *serializeMessage(int code, char*msg);
+
+char *serializeAnswer(int code, int rcode, char* error_message);
+
 void sig_handler(int sig);
 
 box *find_box(char box_name[], box *head);
 
-void insert_Box(char box_name[], box *head);
+box *insert_box(box *new_box, box *head);
 
-void delete_Box(char box_name[], box *head);
+box *delete_box(char box_name[], box *head);
 
 void set_log_level(log_level_t level);
 extern log_level_t g_level;
