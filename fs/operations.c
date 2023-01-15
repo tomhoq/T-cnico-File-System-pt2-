@@ -290,6 +290,7 @@ int tfs_unlink(char const *target) {
         WARN("failed to lock mutex: %s", strerror(errno));
         return -1;
     }
+    printf("aa\n");
     // Checks if the path name is valid
     if (!valid_pathname(target)) {
         if (pthread_mutex_unlock(&g_library_mutex) == -1) {
@@ -298,19 +299,22 @@ int tfs_unlink(char const *target) {
         }
         return -1;
     }
+    printf("AA\n");
 
     inode_t *root_dir_inode = inode_get(ROOT_DIR_INUM);
     ALWAYS_ASSERT(root_dir_inode != NULL,
                   "tfs_open: root dir inode must exist");
     int inum = tfs_lookup(target, root_dir_inode);
-
+    printf("aa\n");
     if (inum == -1) {
+        printf("AA\n");
         if (pthread_mutex_unlock(&g_library_mutex) == -1) {
             WARN("failed to unlock mutex: %s", strerror(errno));
             return -1;
         }
         return -1;
     }
+    printf("bb\n");
 
     inode_delete(inum);
     if (clear_dir_entry(root_dir_inode, target + 1) == -1) {
@@ -320,7 +324,7 @@ int tfs_unlink(char const *target) {
         }
         return -1;
     }
-
+    printf("cc\n");
     if (pthread_mutex_unlock(&g_library_mutex) == -1) {
         WARN("failed to unlock mutex: %s", strerror(errno));
         return -1;

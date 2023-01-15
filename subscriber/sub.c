@@ -9,15 +9,6 @@ void sighandler() {
     shouldRun = false;
 }
 
-
-/*void sig_handler(int sig){
-  // UNSAFE: This handler uses non-async-signal-safe functions (printf(),
-    if (sig == SIGINT) { //ctrl + c
-        return; // Resume execution at point of interruption
-    }  
-    return;
-}*/
-
 int main(int argc, char **argv) {
 
     if (signal(SIGINT, &sighandler) == SIG_ERR) {
@@ -93,16 +84,15 @@ int main(int argc, char **argv) {
 
     char buf[MSIZE], output[MSIZE];
     int code;
-    if (read(fd, buf, 1024) < 0)
-        printf("HUSHUHSUHSU\n");
-    printf("buf:%s\n", buf);
+    ssize_t c;
 
-    while (shouldRun) {        
+    while ((c = read(fd, buf, MSIZE)) > 0) {
+        buf[c] = 0;
         if (sscanf(buf, "%d %[^\n]%*c", &code, output) == 2) 
             printf("%s\n", output);
     }
-    printf("SAIIIIIIIIIIIIIIIII\n");
-    printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
+ 
+    //printf("%s %s %s\n", register_pipe, personal_pipe, box_name);
     clear_session(fd, personal_pipe);
     return 0;
 }

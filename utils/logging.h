@@ -14,6 +14,7 @@
 #include <sys/stat.h> //open
 #include <fcntl.h>  //flags for open
 #include <unistd.h>
+#include <stdint.h>
 
 static const __uint8_t REGISTER_PUBLISHER = 1;
 static const __uint8_t REGISTER_SUBSCRIBER = 2;
@@ -21,6 +22,7 @@ static const __uint8_t CREATE_BOX = 3;
 static const __uint8_t ANSWER_CREATE_BOX = 4;
 static const __uint8_t REMOVE_BOX = 5;
 static const __uint8_t LIST_BOX = 7;
+static const __uint8_t LIST_ANSWER = 8;
 static const __uint8_t SEND_CODE = 9;
 static const __uint8_t SERVER_SEND = 10;
 
@@ -65,7 +67,12 @@ char *serializeMessage(int code, char*msg);
 
 char *serializeAnswer(int code, int rcode, char* error_message);
 
+char *serializeListing(int code, uint8_t last, char* box_name, uint64_t size, 
+uint64_t pub, uint64_t sub);
+
 void sig_handler(int sig);
+
+void free_boxes(box *head);
 
 box *find_box(char box_name[], box *head);
 

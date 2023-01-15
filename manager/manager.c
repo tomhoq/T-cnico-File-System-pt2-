@@ -1,5 +1,6 @@
 #include "logging.h"
 #include <string.h>
+#include <inttypes.h>
 
 static void print_usage() {
     fprintf(stderr, "usage: \n"
@@ -29,7 +30,7 @@ int main(int argc, char **argv) {
         fprintf(stdout, "ERROR: %s\n", PIPENAME_TOO_BIG);
         return -1;
     }
-    if (strcmp(argv[3], "create")&&strcmp(argv[3], "remove")&&strcmp(command, "list")) {
+    if (strcmp(argv[3], "create")&&strcmp(argv[3], "remove")&&strcmp(argv[3], "list")) {
         fprintf(stdout, "ERROR: %s\n", INVALID_ARGUMENTS);
         return -1;
     }
@@ -39,7 +40,6 @@ int main(int argc, char **argv) {
             return -1;
         }
         strcat(box_name ,argv[4]);
-        printf("%s\n", box_name);
     }
     
 
@@ -87,30 +87,43 @@ int main(int argc, char **argv) {
     if(read(fd, buffer, MSIZE) <= 0){
         fprintf(stdout, "ERROR: %s\n", "Failed to read");
     }
-    sscanf(buffer, "%d %s", &code, input);
-    printf("%d\n",code);
-    //int last;
-    //char name[BOXNAME];
-    //__uint64_t size, p, s;
+    sscanf(buffer, "%d %[^\n]%*c", &code, input);
+    printf("input %s\n", input);
+    printf("CODE:%d\n",code);    
 
     if (code != 8){
         sscanf(input, "%d %s", &return_code, error_msg);
-        printf("%d %s\n",return_code, error_msg);
-        if(return_code==-1)
+        //printf("%d %s\n",return_code, error_msg);
+        if(return_code == -1)
             fprintf(stdout, "ERROR %s\n", error_msg);
         else
             fprintf(stdout, "OK\n");
     }
     else{
-        //while(last != 1){
-            //sscanf(buffer, "%d %s %lu %lu %lu", &last, name, &size &p &s, input);
-        //}
-        //fprintf(stdout, "%s %zu %zu %zu\n", box_name, box_size, n_publishers, n_subscribers);
+        int last;
+        char name[BOXNAME];
+        printf("INPUT:%s\n", input);
+        unsigned long int size, p, s;
+        strcpy(buffer, input);
+        sscanf(buffer, "%d %s %lu %lu %lu", &last, name, &size, &p, &s);
+        if (!strcmp(name,"0")){
+            fprintf(stdout, " 0 0 0\n");
+        }
+        else
+            fprintf(stdout, "name:%s size:%zu pub:%zu sub:%zu\n", name, size, p, s);
+        while(last != 1){
+            memset(buffer, '\0',strlen(buffer));      
+            if(read(fd, buffer, MSIZE) <= 0){
+                fprintf(stdout, "ERROR: %s\n", "Failed to read");
+            }
+            sscanf(buffer, "%d %s %lu %lu %lu", &last, name, &size , &p, &s);
+            fprintf(stdout, "next: %s %zu %zu %zu\n", name, size, p, s); 
+        }
     }
     
     free(buffer);
     clear_session(fd, personal_pipe);
-    printf("%s %s %s %s\n", register_pipe, personal_pipe, command, box_name);
+    //printf("%s %s %s %s\n", register_pipe, personal_pipe, command, box_name);
 
     return 0;
 }
