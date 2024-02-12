@@ -1,1 +1,3 @@
-# tfs_project_part2
+#Part2
+
+Developed further into inodes and symlinks. 
